@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AnimMontage.h"
 #include "Melee_Game/CombatComponentPlayer.h"
+#include "Melee_Game/CollisionComponent_C_Player.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -41,6 +42,7 @@ ACharacterBase::ACharacterBase()
 	BaseLookUpRate = 45.f;
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponentPlayer>(TEXT("Combat Component"));
+	CollisionComponent = CreateDefaultSubobject<UCollisionComponent_C_Player>(TEXT("Collision Component"));
 
 	bIsDodging = false;
 
@@ -95,8 +97,8 @@ void ACharacterBase::LightAttack()
 {
 	if (CanPerformAttack()) 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ATTACKING"));
-		UE_LOG(LogTemp, Warning, TEXT("%i"), CombatComponent->AttackCount);
+		//UE_LOG(LogTemp, Warning, TEXT("ATTACKING"));
+		//UE_LOG(LogTemp, Warning, TEXT("%i"), CombatComponent->AttackCount);
 
 		if (CombatComponent->bIsAttacking) 
 		{
@@ -119,6 +121,9 @@ void ACharacterBase::LightAttack()
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	CollisionComponent->SetCollisionMeshComponent(GetMesh());
+	CollisionComponent->AddActorToIgnore(GetOwner());
 
 	
 	
@@ -147,6 +152,16 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
 
+}
+
+void ACharacterBase::OnHit()
+{
+	CollisionComponent->OnHitDispatcher.AddDynamic(this, &ACharacterBase::HIT);
+}
+
+void ACharacterBase::HIT(FHitResult HitResult)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("DISPATCHER"));
 }
 
 void ACharacterBase::ContinueAttack_Implementation()

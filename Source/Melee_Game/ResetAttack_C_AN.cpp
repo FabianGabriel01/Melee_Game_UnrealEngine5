@@ -6,6 +6,6 @@
 
 void UResetAttack_C_AN::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ResetAttack from AN"));
+	//UE_LOG(LogTemp, Warning, TEXT("ResetAttack from AN"));
 	ICombat_CI::Execute_ResetAttack(MeshComp->GetOwner());
 }

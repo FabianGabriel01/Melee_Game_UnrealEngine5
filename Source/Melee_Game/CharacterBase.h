@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Combat_CI.h"
+#include "CollisionComponent_C_Player.h"
 #include "CharacterBase.generated.h"
 
 class UCameraComponent;
@@ -34,6 +35,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UCombatComponentPlayer* CombatComponent;
 
+	UPROPERTY(EditAnywhere)
+	UCollisionComponent_C_Player* CollisionComponent;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -52,6 +56,12 @@ public:
 
 	UPROPERTY()
 		bool bIsDodging;
+
+	UFUNCTION()
+		void OnHit();
+
+	UFUNCTION()
+		void HIT(FHitResult HitResult);
 
 
 	///INTERFACES

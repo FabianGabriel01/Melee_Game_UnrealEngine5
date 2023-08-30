@@ -34,6 +34,6 @@
 
 void UContinueAttack_C_AN::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ContinueAttack from AN"));
+	//UE_LOG(LogTemp, Warning, TEXT("ContinueAttack from AN"));
 	ICombat_CI::Execute_ContinueAttack(MeshComp->GetOwner());
 }

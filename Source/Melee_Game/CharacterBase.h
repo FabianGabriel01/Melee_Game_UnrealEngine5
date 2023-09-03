@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Combat_CI.h"
 #include "CollisionComponent_C_Player.h"
+#include "Engine/EngineTypes.h"
 #include "CharacterBase.generated.h"
 
 class UCameraComponent;
@@ -38,6 +39,13 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UCollisionComponent_C_Player* CollisionComponent;
 
+
+	UPROPERTY(EditAnywhere)
+	USoundBase* HitSound;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ParticleHit;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -57,12 +65,35 @@ public:
 	UPROPERTY()
 		bool bIsDodging;
 
-	UFUNCTION()
-		void OnHit();
+	UPROPERTY()
+		bool bIsDisable;
 
-	UFUNCTION()
+	UPROPERTY(EditAnywhere)
+		float BaseDamage;
+
+	UPROPERTY(EditAnywhere)
+		TSubclassOf<UDamageType> DamageT;
+
+	UFUNCTION(BlueprintCallable)
 		void HIT(FHitResult HitResult);
 
+	UFUNCTION()
+		void ApplyHitReaction(AActor* Causer);
+
+	UPROPERTY()
+		float Health;
+
+	/*UFUNCTION()
+		void ApplyPointDamage(AActor* DamagedActor, float Damage, const FVector &HitFromDirection, const FHitResult &HitInfo, AController* EventInstigator, AActor* DamageCauser);*/
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+
+	UFUNCTION()
+		void ReceiveDamage(float InDamage, AActor* DamageCauser);
+
+	UFUNCTION()
+		void EnableRagdoll(FVector LastHit);
 
 	///INTERFACES
 	void ContinueAttack_Implementation() override;
@@ -100,5 +131,7 @@ private:
 
 	UFUNCTION()
 	void PerformDodge(int MontageIndex);
+
+
 
 };

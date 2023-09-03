@@ -7,11 +7,11 @@
 void UCollisionTraceRight_C_ANS::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
 {
 	UCollisionComponent_C_Player* Component = MeshComp->GetOwner()->FindComponentByClass<UCollisionComponent_C_Player>();
-	Component->EnableCollision();
+	Component->EnableCollisionRight();
 }
 
 void UCollisionTraceRight_C_ANS::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	UCollisionComponent_C_Player* Component = MeshComp->GetOwner()->FindComponentByClass<UCollisionComponent_C_Player>();
-	Component->DisableCollision();
+	Component->DisableCollisionRight();
 }

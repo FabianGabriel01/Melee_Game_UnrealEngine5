@@ -10,6 +10,8 @@
 #include "Melee_Game/CollisionComponent_C_Player.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/PrimitiveComponent.h"
 
 
 // Sets default values
@@ -45,6 +47,9 @@ ACharacterBase::ACharacterBase()
 	CollisionComponent = CreateDefaultSubobject<UCollisionComponent_C_Player>(TEXT("Collision Component"));
 
 	bIsDodging = false;
+	BaseDamage = 20.0f;
+
+	Health = 100.0f;
 
 }
 
@@ -122,10 +127,10 @@ void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CollisionComponent->SetCollisionMeshComponent(GetMesh());
+	CollisionComponent->SetCollisionMeshComponentRight(GetMesh());
+	CollisionComponent->SetCollisionMeshComponentLeft(GetMesh());
 	CollisionComponent->AddActorToIgnore(GetOwner());
-
-	
+	CollisionComponent->OnHitDispatcher.AddDynamic(this, &ACharacterBase::HIT);
 	
 }
 
@@ -152,16 +157,67 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
 
-}
+	//PlayerInputComponent->BindAction("TestingP", EInputEvent::IE_Pressed, this, &ACharacterBase::EnableRagdoll);
 
-void ACharacterBase::OnHit()
-{
-	CollisionComponent->OnHitDispatcher.AddDynamic(this, &ACharacterBase::HIT);
 }
 
 void ACharacterBase::HIT(FHitResult HitResult)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Emerald, TEXT("DISPATCHER"));
+	UGameplayStatics::ApplyPointDamage
+	(
+		HitResult.GetActor(),
+		BaseDamage,
+		GetOwner()->GetActorForwardVector(),
+		HitResult, 
+		GetInstigatorController(),
+		this,
+		DamageT
+	);
+
+	UGameplayStatics::SpawnEmitterAtLocation(this, ParticleHit, HitResult.ImpactPoint);
+}
+
+void ACharacterBase::ApplyHitReaction(AActor* Causer)
+{
+	GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 25000.0f, true);
+	bIsDisable = true;
+
+	//PlayHitReactionMontage
+
+}
+
+float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	UGameplayStatics::PlaySoundAtLocation(this, HitSound, DamageCauser->GetActorLocation());
+	ApplyHitReaction(DamageCauser);
+	ReceiveDamage(DamageAmount, DamageCauser);
+
+	return 0.0f;
+}
+
+void ACharacterBase::ReceiveDamage(float InDamage, AActor* DamageCauser)
+{
+
+	Health = UKismetMathLibrary::Clamp(Health- InDamage, 0, 100.0f);
+	UE_LOG(LogTemp, Warning, TEXT("%f"), Health);
+
+	if (Health <= 0.0f) 
+	{
+		EnableRagdoll(DamageCauser->GetActorForwardVector());
+	}
+
+}
+
+void ACharacterBase::EnableRagdoll(FVector LastHit)
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	CameraBoom->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("pelvis"));
+	CameraBoom->bDoCollisionTest = false;
+
+	GetMesh()->SetCollisionProfileName(FName("Ragdoll"));
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(FName("pelvis"), true);
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(FName("pelvis"), 1.0);
+	GetMesh()->SetPhysicsLinearVelocity(LastHit * 10000.0f, false, FName("pelvis"));
 }
 
 void ACharacterBase::ContinueAttack_Implementation()
@@ -178,6 +234,7 @@ void ACharacterBase::ContinueAttack_Implementation()
 void ACharacterBase::ResetAttack_Implementation()
 {
 	CombatComponent->ResetAttack();
+	bIsDisable = false;
 }
 
 FRotator ACharacterBase::GetRotationPlayer_Implementation()

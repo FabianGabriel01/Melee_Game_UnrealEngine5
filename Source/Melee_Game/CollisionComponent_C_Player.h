@@ -32,36 +32,66 @@ public:
 	UPROPERTY()
 		TArray<FHitResult> Hits;
 	
+
+
+	//////RIGHT HAND
 	UPROPERTY(EditAnywhere)
-		FName StartSocket;
+		FName StartSocketRight;
+
 
 	UPROPERTY(EditAnywhere)
-		FName EndSocket;
+		FName EndSocketRight;
+
+
+	///LEFT HAND
+	UPROPERTY(EditAnywhere)
+		FName StartSocketLeft;
+
+	UPROPERTY(EditAnywhere)
+		FName EndSocketLeft;
 
 	///FUNCS
 	UFUNCTION()
-	void EnableCollision();
+	void EnableCollisionRight();
 
 	UFUNCTION()
-	void DisableCollision();
+	void EnableCollisionLeft();
 
 	UFUNCTION()
-	void CollisionTrace();
+	void DisableCollisionRight();
+
+	UFUNCTION()
+	void DisableCollisionLeft();
+
+	UFUNCTION()
+	void CollisionTraceRight();
+
+	UFUNCTION()
+	void CollisionTraceLeft();
 
 	UFUNCTION()
 	void ClearHitActors();
+
+	UFUNCTION()
+		void OnEventDispatcher(FHitResult LastHit);
 
 	UFUNCTION(BlueprintPure)
 	TArray<AActor*> GetAlreadyHitActors();
 
 	UFUNCTION(BlueprintPure)
-		bool IsCollisionEnable();
+		bool IsCollisionEnableRight();
+
+	UFUNCTION(BlueprintPure)
+		bool IsCollisionEnableLeft();
 
 	UFUNCTION(BlueprintPure)
 		FHitResult GetLastHit();
 
 	UFUNCTION(BlueprintCallable)
-		void SetCollisionMeshComponent(UPrimitiveComponent* CollisionMeshComp);
+		void SetCollisionMeshComponentRight(UPrimitiveComponent* CollisionMeshComp);
+
+	UFUNCTION(BlueprintCallable)
+		void SetCollisionMeshComponentLeft(UPrimitiveComponent* CollisionMeshComp);
 
 	UFUNCTION(BlueprintPure)
 		UPrimitiveComponent* GetCollsionMeshComponent();
@@ -81,7 +111,10 @@ private:
 		TArray<AActor*> AlreadyHitActors;
 
 	UPROPERTY()
-		bool bCollisionEnabled;
+		bool bCollisionEnabledRight;
+
+	UPROPERTY()
+		bool bCollisionEnabledLeft;
 
 	UPROPERTY()
 		FHitResult LastHit;

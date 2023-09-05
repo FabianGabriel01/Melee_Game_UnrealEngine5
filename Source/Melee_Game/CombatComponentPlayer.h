@@ -32,18 +32,14 @@ public:
 	UPROPERTY()
 	bool bAttackSaved;
 
-	UPROPERTY()
-	bool bIsAttacking;
-
-
 	UPROPERTY(EditAnywhere)
 	TArray<UAnimMontage*> AttackMontages;
 
 	UPROPERTY(EditAnywhere)
-		TArray<UAnimMontage*> DodgeMontages;
+	TArray<UAnimMontage*> DodgeMontages;
 
 	UFUNCTION()
-		void ResetAttack();
+	void ResetAttack();
 
 
 

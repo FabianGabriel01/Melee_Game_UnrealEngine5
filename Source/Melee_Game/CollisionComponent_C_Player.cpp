@@ -132,7 +132,7 @@ void UCollisionComponent_C_Player::CollisionTraceLeft()
 			CollisionMeshComponent->GetSocketLocation(StartSocketLeft),
 			CollisionMeshComponent->GetSocketLocation(EndSocketLeft),
 			FQuat::Identity,
-			ECollisionChannel::ECC_Pawn,
+			ECollisionChannel::ECC_GameTraceChannel1,
 			FCollisionShape::MakeSphere(10.0f),
 			Params
 		);

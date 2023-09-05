@@ -7,6 +7,8 @@
 #include "Combat_CI.h"
 #include "CollisionComponent_C_Player.h"
 #include "Engine/EngineTypes.h"
+#include "CharacterState.h"
+#include "StateManagerComponent_Player.h"
 #include "CharacterBase.generated.h"
 
 class UCameraComponent;
@@ -38,6 +40,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UCollisionComponent_C_Player* CollisionComponent;
+
+	UPROPERTY(EditAnywhere)
+	UStateManagerComponent_Player* StateManagerComponent;
 
 
 	UPROPERTY(EditAnywhere)
@@ -83,6 +88,10 @@ public:
 	UPROPERTY()
 		float Health;
 
+	TArray<ECharacterState> StatesToCheckInCanAttack;
+
+	TArray<ECharacterState> StatesToCheckInCanDodge;
+
 	/*UFUNCTION()
 		void ApplyPointDamage(AActor* DamagedActor, float Damage, const FVector &HitFromDirection, const FHitResult &HitInfo, AController* EventInstigator, AActor* DamageCauser);*/
 
@@ -125,7 +134,7 @@ private:
 
 	//Keys
 	UFUNCTION()
-	void PerformAttack(int AttackIndex);
+	void PerformAttack(int AttackIndex, ECharacterAction AttackType);
 
 	void LightAttack();
 

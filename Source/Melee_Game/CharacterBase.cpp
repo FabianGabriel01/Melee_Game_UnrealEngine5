@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Animation/AnimMontage.h"
 #include "Melee_Game/CombatComponentPlayer.h"
 #include "Melee_Game/CollisionComponent_C_Player.h"
@@ -45,23 +46,42 @@ ACharacterBase::ACharacterBase()
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponentPlayer>(TEXT("Combat Component"));
 	CollisionComponent = CreateDefaultSubobject<UCollisionComponent_C_Player>(TEXT("Collision Component"));
+	StateManagerComponent = CreateDefaultSubobject<UStateManagerComponent_Player>(TEXT("StatemanagerComponent"));
 
 	bIsDodging = false;
 	BaseDamage = 20.0f;
 
 	Health = 100.0f;
 
+	StatesToCheckInCanAttack = 
+	{
+		ECharacterState::CS_ATTACKING,
+		ECharacterState::CS_DEATH,
+		ECharacterState::CS_DODGING,
+		ECharacterState::CS_DISABLE
+	};
+
+	StatesToCheckInCanDodge =
+	{
+		ECharacterState::CS_DEATH,
+		ECharacterState::CS_DODGING,
+		ECharacterState::CS_DISABLE
+	};
+
 }
 
 
 
 
-void ACharacterBase::PerformAttack(int AttackIndex)
+void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
 {
 	UAnimMontage* L_AttackMontage = CombatComponent->AttackMontages[AttackIndex];
 	if (L_AttackMontage) 
 	{
-		CombatComponent->bIsAttacking = true;
+		//CombatComponent->bIsAttacking = true;
+
+		StateManagerComponent->SetState(ECharacterState::CS_ATTACKING);
+		StateManagerComponent->SetCurrentAction(AttackType);
 		PlayAnimMontage(L_AttackMontage);
 
 		CombatComponent->AttackCount++;
@@ -85,7 +105,9 @@ void ACharacterBase::PerformDodge(int MontageIndex)
 		UAnimMontage* L_DodgeMontage = CombatComponent->DodgeMontages[MontageIndex];
 		if (L_DodgeMontage)
 		{
-			bIsDodging = true;
+			//bIsDodging = true;
+			StateManagerComponent->SetState(ECharacterState::CS_DODGING);
+
 			PlayAnimMontage(L_DodgeMontage);
 
 		}
@@ -100,24 +122,19 @@ void ACharacterBase::PerformDodge(int MontageIndex)
 
 void ACharacterBase::LightAttack()
 {
-	if (CanPerformAttack()) 
+	if (StateManagerComponent->GetCurrentState() == ECharacterState::CS_ATTACKING)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("ATTACKING"));
-		//UE_LOG(LogTemp, Warning, TEXT("%i"), CombatComponent->AttackCount);
-
-		if (CombatComponent->bIsAttacking) 
-		{
-			CombatComponent->bAttackSaved = true;
-		}
-		else 
-		{
-			PerformAttack(CombatComponent->AttackCount);
-		}
-
+		CombatComponent->bAttackSaved = true;
 	}
-
-
-	
+	else 
+	{
+		if (CanPerformAttack())
+		{
+			// IF
+			//CombatComponent->bIsAttacking 
+			PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
+		}
+	}
 }
 
 
@@ -183,6 +200,7 @@ void ACharacterBase::ApplyHitReaction(AActor* Causer)
 	bIsDisable = true;
 
 	//PlayHitReactionMontage
+	//StateManagerComponent to DISABLE
 
 }
 
@@ -211,6 +229,11 @@ void ACharacterBase::ReceiveDamage(float InDamage, AActor* DamageCauser)
 void ACharacterBase::EnableRagdoll(FVector LastHit)
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
+
+	
 	CameraBoom->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("pelvis"));
 	CameraBoom->bDoCollisionTest = false;
 
@@ -218,15 +241,27 @@ void ACharacterBase::EnableRagdoll(FVector LastHit)
 	GetMesh()->SetAllBodiesBelowSimulatePhysics(FName("pelvis"), true);
 	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(FName("pelvis"), 1.0);
 	GetMesh()->SetPhysicsLinearVelocity(LastHit * 10000.0f, false, FName("pelvis"));
+
+	StateManagerComponent->SetState(ECharacterState::CS_DEATH);
+	SetLifeSpan(2.0f);
 }
 
 void ACharacterBase::ContinueAttack_Implementation()
 {
-	CombatComponent->bIsAttacking = false;
+	//CombatComponent->bIsAttacking = false;
 	if (CombatComponent->bAttackSaved) 
 	{
 		CombatComponent->bAttackSaved = false;
-		PerformAttack(CombatComponent->AttackCount);
+		if (StateManagerComponent->GetCurrentState() == ECharacterState::CS_ATTACKING) 
+		{
+			StateManagerComponent->SetState(ECharacterState::CS_NONE);
+			PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
+		}
+		else 
+		{
+			PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
+
+		}
 	}
 
 }
@@ -255,17 +290,25 @@ FRotator ACharacterBase::GetRotationPlayer_Implementation()
 void ACharacterBase::ResetCombat_Implementation()
 {
 	CombatComponent->ResetAttack();
-	bIsDodging = false;
+	StateManagerComponent->ResetState();
+	StateManagerComponent->SetCurrentAction(ECharacterAction::CA_NONE);
+	//bIsDodging = false;
 }
 
 bool ACharacterBase::CanPerformAttack()
 {
-	return !CombatComponent->bIsAttacking;
+	//return !CombatComponent->bIsAttacking;
+
+	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanAttack);
+
+	
 }
 
 bool ACharacterBase::CanPerformDodge()
 {
-	return !CombatComponent->bIsAttacking && !bIsDodging;
+	//return !CombatComponent->bIsAttacking && !bIsDodging && !GetCharacterMovement()->IsFalling();
+
+	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanDodge) && !GetCharacterMovement()->IsFalling();
 }
 
 void ACharacterBase::MoveForward(float Value)

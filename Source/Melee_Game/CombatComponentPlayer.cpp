@@ -36,6 +36,5 @@ void UCombatComponentPlayer::ResetAttack()
 {
 	AttackCount = 0;
 	bAttackSaved = false;
-	bIsAttacking = false;
 }
 

@@ -124,21 +124,30 @@ void ACharacterBase::PerformDodge(int MontageIndex)
 
 void ACharacterBase::LightAttack()
 {
-	bHeavyAttack = false;
+	TrackChargedAttack(HoldKey1);
+}
 
-	if (StateManagerComponent->GetCurrentState() == ECharacterState::CS_ATTACKING)
+void ACharacterBase::LightAttackReleased()
+{
+	if (ResetChargedAttack()) 
 	{
-		CombatComponent->bAttackSaved = true;
-	}
-	else 
-	{
-		if (CanPerformAttack())
+		bHeavyAttack = false;
+
+		if (StateManagerComponent->GetCurrentState() == ECharacterState::CS_ATTACKING)
 		{
-			// IF
-			//CombatComponent->bIsAttacking 
-			PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
+			CombatComponent->bAttackSaved = true;
+		}
+		else
+		{
+			if (CanPerformAttack())
+			{
+				// IF
+				//CombatComponent->bIsAttacking 
+				PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
+			}
 		}
 	}
+
 }
 
 void ACharacterBase::HeavyAttack()
@@ -148,6 +157,59 @@ void ACharacterBase::HeavyAttack()
 	{
 		PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_UPPERCUT);
 	}
+}
+
+void ACharacterBase::TrackChargedAttack(FKey Key)
+{
+	HoldKey1 = Key;
+	GetWorld()->GetTimerManager().SetTimer(TimerPress1, this, &ACharacterBase::ChargedAttackTimerEvent, 0.016, true);
+	UE_LOG(LogTemp, Warning, TEXT("Track charged Attack"));
+}
+
+void ACharacterBase::ChargedAttackTimerEvent()
+{
+	AttackHoldTime =  UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(HoldKey1);
+	bAttackCharged = AttackHoldTime >= 0.18f;
+	if (bAttackCharged) 
+	{
+		GetWorld()->GetTimerManager().SetTimer(TimerPress2, FTimerDelegate::CreateLambda([=]()
+			{
+				GetWorld()->GetTimerManager().ClearTimer(TimerPress1);
+			}
+		), 0.016, false);
+		UE_LOG(LogTemp, Warning, TEXT("Clear Charged Attack"));
+
+		ChargedAttackevent();
+	}
+}
+
+void ACharacterBase::ChargedAttackevent()
+{
+	if (CanPerformAttack()) 
+	{
+		PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_CHARGED);
+	}
+}
+
+bool ACharacterBase::ResetChargedAttack()
+{
+	GetWorld()->GetTimerManager().SetTimer(TimerPress2, FTimerDelegate::CreateLambda([=]()
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerPress1);
+		}
+	), 0.016, false);
+	UE_LOG(LogTemp, Warning, TEXT("Clear Charged Attack"));
+	AttackHoldTime = 0;
+	if (bAttackCharged) 
+	{
+		bAttackCharged = false;
+		bReturnAttackCharged = false;
+	}
+	else 
+	{
+		bReturnAttackCharged = true;
+	}
+	return bReturnAttackCharged;
 }
 
 
@@ -184,7 +246,10 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 
 	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::LightAttack);
+	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttackReleased);
+
 	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyAttack);
+	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttack);
 
 
 	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);

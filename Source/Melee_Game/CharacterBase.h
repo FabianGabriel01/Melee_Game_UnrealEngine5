@@ -85,10 +85,25 @@ public:
 	UFUNCTION()
 		void ApplyHitReaction(AActor* Causer);
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 		float Health;
 
 	bool bHeavyAttack;
+
+	UPROPERTY(EditAnywhere)
+	bool bAttackCharged;
+
+	bool bReturnAttackCharged;
+
+	UPROPERTY(EditAnywhere)
+		float AttackHoldTime;
+
+	UPROPERTY(EditAnywhere)
+		FKey HoldKey1;
+
+	FTimerHandle TimerPress1;
+	FTimerHandle TimerPress2;
+
 
 	TArray<ECharacterState> StatesToCheckInCanAttack;
 
@@ -140,7 +155,17 @@ private:
 
 	void LightAttack();
 
+	void LightAttackReleased();
+
 	void HeavyAttack();
+
+	void TrackChargedAttack(FKey Key);
+
+	void ChargedAttackTimerEvent();
+
+	void ChargedAttackevent();
+
+	bool ResetChargedAttack();
 
 	UFUNCTION()
 	void PerformDodge(int MontageIndex);

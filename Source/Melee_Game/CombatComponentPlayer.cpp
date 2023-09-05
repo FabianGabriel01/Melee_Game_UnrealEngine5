@@ -32,6 +32,28 @@ void UCombatComponentPlayer::TickComponent(float DeltaTime, ELevelTick TickType,
 	// ...
 }
 
+TArray<UAnimMontage*> UCombatComponentPlayer::GetActionMontages(ECharacterAction Actions)
+{
+	switch (Actions)
+	{
+	case ECharacterAction::CA_NONE:
+		ReturnActionsMontages = AttackMontages;
+		break;
+	case ECharacterAction::CA_LIGHT:
+		ReturnActionsMontages = AttackMontages;
+		break;
+	case ECharacterAction::CA_UPPERCUT:
+		ReturnActionsMontages = UppercutMontages;
+		break;
+	case ECharacterAction::CA_CHARGED:
+		ReturnActionsMontages = ChargedAttackMontages;
+		break;
+	default:
+		break;
+	}
+	return ReturnActionsMontages;
+}
+
 void UCombatComponentPlayer::ResetAttack()
 {
 	AttackCount = 0;

@@ -75,7 +75,9 @@ ACharacterBase::ACharacterBase()
 
 void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
 {
-	UAnimMontage* L_AttackMontage = CombatComponent->AttackMontages[AttackIndex];
+	TArray<UAnimMontage*> L_AttackMontagesArray = CombatComponent->GetActionMontages(AttackType);
+	UAnimMontage* L_AttackMontage = L_AttackMontagesArray[AttackIndex];
+
 	if (L_AttackMontage) 
 	{
 		//CombatComponent->bIsAttacking = true;
@@ -86,7 +88,7 @@ void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
 
 		CombatComponent->AttackCount++;
 
-		if (CombatComponent->AttackCount > CombatComponent->AttackMontages.Num() - 1) 
+		if (CombatComponent->AttackCount > L_AttackMontagesArray.Num() - 1)
 		{
 			CombatComponent->AttackCount = 0;
 		}
@@ -122,6 +124,8 @@ void ACharacterBase::PerformDodge(int MontageIndex)
 
 void ACharacterBase::LightAttack()
 {
+	bHeavyAttack = false;
+
 	if (StateManagerComponent->GetCurrentState() == ECharacterState::CS_ATTACKING)
 	{
 		CombatComponent->bAttackSaved = true;
@@ -134,6 +138,15 @@ void ACharacterBase::LightAttack()
 			//CombatComponent->bIsAttacking 
 			PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_LIGHT);
 		}
+	}
+}
+
+void ACharacterBase::HeavyAttack()
+{
+	bHeavyAttack = true;
+	if (CanPerformAttack() && bHeavyAttack) 
+	{
+		PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_UPPERCUT);
 	}
 }
 
@@ -171,6 +184,8 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 
 	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::LightAttack);
+	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyAttack);
+
 
 	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
 

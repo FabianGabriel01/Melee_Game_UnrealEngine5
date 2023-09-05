@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "ECharacterAction.h"
 #include "CombatComponentPlayer.generated.h"
 
 class UAnimMontage;
@@ -37,6 +38,18 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UAnimMontage*> DodgeMontages;
+
+	UPROPERTY(EditAnywhere)
+		TArray<UAnimMontage*> UppercutMontages;
+
+	UPROPERTY(EditAnywhere)
+		TArray<UAnimMontage*> ChargedAttackMontages;
+
+	UFUNCTION()
+		TArray<UAnimMontage*> GetActionMontages(ECharacterAction Actions);
+
+	UPROPERTY()
+		TArray<UAnimMontage*> ReturnActionsMontages;
 
 	UFUNCTION()
 	void ResetAttack();

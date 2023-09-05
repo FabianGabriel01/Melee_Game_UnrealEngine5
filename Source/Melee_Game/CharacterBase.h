@@ -88,6 +88,8 @@ public:
 	UPROPERTY()
 		float Health;
 
+	bool bHeavyAttack;
+
 	TArray<ECharacterState> StatesToCheckInCanAttack;
 
 	TArray<ECharacterState> StatesToCheckInCanDodge;
@@ -137,6 +139,8 @@ private:
 	void PerformAttack(int AttackIndex, ECharacterAction AttackType);
 
 	void LightAttack();
+
+	void HeavyAttack();
 
 	UFUNCTION()
 	void PerformDodge(int MontageIndex);

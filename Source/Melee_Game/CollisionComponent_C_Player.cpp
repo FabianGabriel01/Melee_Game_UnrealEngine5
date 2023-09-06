@@ -105,18 +105,6 @@ void UCollisionComponent_C_Player::CollisionTraceRight()
 			}
 
 		}
-
-
-		DrawDebugSphere
-		(
-			GetWorld(),
-			CollisionMeshComponent->GetSocketLocation(StartSocketRight),
-			10.0f,
-			12,
-			FColor::Blue,
-			true,
-			-1
-		);
 	}
 
 }
@@ -158,20 +146,7 @@ void UCollisionComponent_C_Player::CollisionTraceLeft()
 				}
 
 			}
-
 		}
-
-
-		DrawDebugSphere
-		(
-			GetWorld(),
-			CollisionMeshComponent->GetSocketLocation(StartSocketLeft),
-			10.0f,
-			12,
-			FColor::Green,
-			true,
-			-1
-		);
 	}
 
 

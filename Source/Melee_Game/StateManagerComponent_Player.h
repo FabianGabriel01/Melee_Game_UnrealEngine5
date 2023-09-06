@@ -31,7 +31,7 @@ public:
 	UFUNCTION(BlueprintPure)
 	ECharacterState GetCurrentState();
 
-	UFUNCTION(BlueprintPure)
+	UFUNCTION()
 	ECharacterAction GetCurrentAction();
 
 	UPROPERTY(BlueprintAssignable)

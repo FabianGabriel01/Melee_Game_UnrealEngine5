@@ -83,7 +83,7 @@ public:
 		void HIT(FHitResult HitResult);
 
 	UFUNCTION()
-		void ApplyHitReaction(AActor* Causer);
+		void ApplyHitReaction(AActor* Causer, ECharacterAction AttackTypeH);
 
 	UPROPERTY(EditAnywhere)
 		float Health;
@@ -108,6 +108,12 @@ public:
 	TArray<ECharacterState> StatesToCheckInCanAttack;
 
 	TArray<ECharacterState> StatesToCheckInCanDodge;
+
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* PerformKnockdownAnim;
+
+	UFUNCTION(BlueprintImplementableEvent)
+		void TimelineOn();
 
 	/*UFUNCTION()
 		void ApplyPointDamage(AActor* DamagedActor, float Damage, const FVector &HitFromDirection, const FHitResult &HitInfo, AController* EventInstigator, AActor* DamageCauser);*/

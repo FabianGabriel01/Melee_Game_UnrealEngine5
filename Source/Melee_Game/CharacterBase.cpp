@@ -274,9 +274,32 @@ void ACharacterBase::HIT(FHitResult HitResult)
 	UGameplayStatics::SpawnEmitterAtLocation(this, ParticleHit, HitResult.ImpactPoint);
 }
 
-void ACharacterBase::ApplyHitReaction(AActor* Causer)
+void ACharacterBase::ApplyHitReaction(AActor* Causer, ECharacterAction AttackTypeH)
 {
-	GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 25000.0f, true);
+	switch (AttackTypeH)
+	{
+	case ECharacterAction::CA_NONE:
+		break;
+	case ECharacterAction::CA_LIGHT:
+		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 500.0f, true);
+		break;
+	case ECharacterAction::CA_UPPERCUT:
+		GetCharacterMovement()->AddImpulse(FVector(Causer->GetActorForwardVector().X * 250, Causer->GetActorForwardVector().Y * 250, 1000.0f), true);
+		break;
+	case ECharacterAction::CA_CHARGED:
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Causer->GetActorLocation()));
+		PlayAnimMontage(PerformKnockdownAnim);
+		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 10000.0f, true);
+		GetMesh()->GetAnimInstance()->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
+		break;
+	default:
+		break;
+	}
+
+
+	
+	TimelineOn();
+
 	bIsDisable = true;
 
 	//PlayHitReactionMontage
@@ -286,8 +309,37 @@ void ACharacterBase::ApplyHitReaction(AActor* Causer)
 
 float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	
 	UGameplayStatics::PlaySoundAtLocation(this, HitSound, DamageCauser->GetActorLocation());
-	ApplyHitReaction(DamageCauser);
+
+	ECharacterAction L_Action;
+
+	//UActorComponent* Comp = Causer->GetComponentByClass(UStateManagerComponent_Player::StaticClass());
+	switch (DamageCauser->FindComponentByClass<UStateManagerComponent_Player>()->GetCurrentAction())
+	{
+	case ECharacterAction::CA_LIGHT:
+		UE_LOG(LogTemp, Warning, TEXT("LightAttack"));
+		L_Action = ECharacterAction::CA_LIGHT;
+		break;
+
+	case ECharacterAction::CA_UPPERCUT:
+		UE_LOG(LogTemp, Warning, TEXT("Uppercut"));
+		L_Action = ECharacterAction::CA_UPPERCUT;
+		break;
+
+	case ECharacterAction::CA_CHARGED:
+		UE_LOG(LogTemp, Warning, TEXT("ChargedAttack"));
+		L_Action = ECharacterAction::CA_CHARGED;
+		break;
+
+	default:
+		break;
+	}
+	//Causer->FindComponentByClass<UStateManagerComponent_Player>()->GetCurrentAction();
+
+
+
+	ApplyHitReaction(DamageCauser, L_Action);
 	ReceiveDamage(DamageAmount, DamageCauser);
 
 	return 0.0f;
@@ -295,7 +347,6 @@ float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ACharacterBase::ReceiveDamage(float InDamage, AActor* DamageCauser)
 {
-
 	Health = UKismetMathLibrary::Clamp(Health- InDamage, 0, 100.0f);
 	UE_LOG(LogTemp, Warning, TEXT("%f"), Health);
 

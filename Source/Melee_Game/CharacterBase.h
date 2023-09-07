@@ -152,7 +152,7 @@ public:
 
 
 
-	/////////////LAN CONNECTION
+	/////////////LAN CONNECTION/////////////////////////////////////////////
 	UFUNCTION(BlueprintCallable)
 	void OpenLobby();
 
@@ -161,6 +161,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void CallClientTravel(const FString& Address);
+
+
+	//////////////ONLINE SUBSYSTEM/////////////////////////////////////
+	//Pointer to Online Session Interface
+	//TSharedPtr<class IOnlineSession, ESPMode::ThreadSafe> OnlineSessionInterface;
 
 
 private:

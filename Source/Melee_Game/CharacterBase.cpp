@@ -13,6 +13,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
+////////////Online Subsystem
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 
 
 // Sets default values
@@ -67,6 +70,30 @@ ACharacterBase::ACharacterBase()
 		ECharacterState::CS_DODGING,
 		ECharacterState::CS_DISABLE
 	};
+
+
+
+
+	////////////////////ONLINE SUBSYSTEM/////////////////////
+	//IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	//if (OnlineSubsystem) 
+	//{
+	//	//At this point yu need a BUILD PACKAGE from the game an got and sign in to Steam
+	//	OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
+	//	if (GEngine) 
+	//	{
+	//		GEngine->AddOnScreenDebugMessage
+	//		(
+	//			-1,
+	//			15.f,
+	//			FColor::Emerald,
+	//			FString::Printf(TEXT("Found Subsystem %s"),
+	//				*OnlineSubsystem->GetSubsystemName().ToString()
+	//			));
+
+	//	}
+	//}
+
 
 }
 

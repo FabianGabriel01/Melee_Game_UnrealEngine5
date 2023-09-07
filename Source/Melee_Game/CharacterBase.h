@@ -151,6 +151,18 @@ public:
 	bool CanPerformDodge();
 
 
+
+	/////////////LAN CONNECTION
+	UFUNCTION(BlueprintCallable)
+	void OpenLobby();
+
+	UFUNCTION(BlueprintCallable)
+	void CallOpenLevel(const FString& Address);
+
+	UFUNCTION(BlueprintCallable)
+	void CallClientTravel(const FString& Address);
+
+
 private:
 	//MOVEMENT
 	void MoveForward(float Value);

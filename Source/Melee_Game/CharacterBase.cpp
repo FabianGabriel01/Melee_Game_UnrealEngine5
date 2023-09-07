@@ -32,7 +32,7 @@ ACharacterBase::ACharacterBase()
 	Camera->SetupAttachment(CameraBoom);
 	Camera->bUsePawnControlRotation = false;
 
-	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	AutoPossessPlayer = EAutoReceiveInput::Disabled;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
@@ -553,6 +553,25 @@ bool ACharacterBase::CanPerformDodge()
 	//return !CombatComponent->bIsAttacking && !bIsDodging && !GetCharacterMovement()->IsFalling();
 
 	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanDodge) && !GetCharacterMovement()->IsFalling();
+}
+
+void ACharacterBase::OpenLobby()
+{
+	GetWorld()->ServerTravel("/Game/CombatSystem/Maps/Lobby?listen");
+}
+
+void ACharacterBase::CallOpenLevel(const FString& Address)
+{
+	UGameplayStatics::OpenLevel(GetWorld(), *Address);
+}
+
+void ACharacterBase::CallClientTravel(const FString& Address)
+{
+	APlayerController* PlayerCcontroller = GetGameInstance()->GetFirstLocalPlayerController();
+	if (PlayerCcontroller) 
+	{
+		PlayerCcontroller->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+	}
 }
 
 void ACharacterBase::MoveForward(float Value)

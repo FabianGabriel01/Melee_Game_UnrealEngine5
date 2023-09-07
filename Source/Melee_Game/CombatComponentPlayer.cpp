@@ -48,6 +48,12 @@ TArray<UAnimMontage*> UCombatComponentPlayer::GetActionMontages(ECharacterAction
 	case ECharacterAction::CA_CHARGED:
 		ReturnActionsMontages = ChargedAttackMontages;
 		break;
+	case ECharacterAction::CA_HEAVYKICK:
+		ReturnActionsMontages = HeavyKickAttackMontages;
+		break;
+	case ECharacterAction::CA_CHARGEDKICK:
+		ReturnActionsMontages = ChargedKickMontages;
+		break;
 	default:
 		break;
 	}

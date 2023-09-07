@@ -50,6 +50,20 @@ public:
 	UPROPERTY(EditAnywhere)
 		FName EndSocketLeft;
 
+	///LEGS
+	UPROPERTY(EditAnywhere)
+		FName StartSocketLegRight;
+
+	UPROPERTY(EditAnywhere)
+		FName EndSocketLegRight;
+
+	UPROPERTY(EditAnywhere)
+		FName StartSocketLegLeft;
+
+	UPROPERTY(EditAnywhere)
+		FName EndSocketLegLeft;
+
+
 	///FUNCS
 	UFUNCTION()
 	void EnableCollisionRight();
@@ -70,6 +84,28 @@ public:
 	void CollisionTraceLeft();
 
 	UFUNCTION()
+	void EnableCollisionLegRight();
+
+	UFUNCTION()
+	void EnableCollisionLegLeft();
+	
+	UFUNCTION()
+	void DisableCollisionLegRight();
+
+	UFUNCTION()
+	void DisableCollisionLegLeft();
+
+
+	UFUNCTION()
+	void CollisionTraceLegRight();
+
+	UFUNCTION()
+	void CollisionTraceLegLeft();
+
+
+
+
+	UFUNCTION()
 	void ClearHitActors();
 
 	UFUNCTION()
@@ -78,11 +114,20 @@ public:
 	UFUNCTION(BlueprintPure)
 	TArray<AActor*> GetAlreadyHitActors();
 
+
+
 	UFUNCTION(BlueprintPure)
 		bool IsCollisionEnableRight();
 
 	UFUNCTION(BlueprintPure)
 		bool IsCollisionEnableLeft();
+
+	UFUNCTION(BlueprintPure)
+		bool IsCollisionEnableLegRight();
+
+	UFUNCTION(BlueprintPure)
+		bool IsCollisionEnableLegLeft();
+
 
 	UFUNCTION(BlueprintPure)
 		FHitResult GetLastHit();
@@ -115,6 +160,13 @@ private:
 
 	UPROPERTY()
 		bool bCollisionEnabledLeft;
+
+	UPROPERTY()
+		bool bCollisionEnableLegRight;
+
+	UPROPERTY()
+		bool bCollisionEnableLegLeft;
+
 
 	UPROPERTY()
 		FHitResult LastHit;

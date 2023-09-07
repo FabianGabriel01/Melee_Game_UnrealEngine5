@@ -35,4 +35,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ResetCombat();
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void DisableCollision();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void EnableCollision();
+
 };

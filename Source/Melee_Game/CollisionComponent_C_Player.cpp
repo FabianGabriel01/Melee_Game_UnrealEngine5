@@ -20,7 +20,6 @@ void UCollisionComponent_C_Player::BeginPlay()
 {
 	Super::BeginPlay();
 	Params.AddIgnoredActor(GetOwner());
-
 	// ...
 	
 }
@@ -42,6 +41,17 @@ void UCollisionComponent_C_Player::TickComponent(float DeltaTime, ELevelTick Tic
 	{
 		CollisionTraceLeft();
 	}
+
+	if (bCollisionEnableLegRight) 
+	{
+		CollisionTraceLegRight();
+	}
+
+	if (bCollisionEnableLegLeft) 
+	{
+		CollisionTraceLegLeft();
+	}
+
 }
 
 void UCollisionComponent_C_Player::EnableCollisionRight()
@@ -77,14 +87,14 @@ void UCollisionComponent_C_Player::CollisionTraceRight()
 			CollisionMeshComponent->GetSocketLocation(StartSocketRight),
 			CollisionMeshComponent->GetSocketLocation(EndSocketRight),
 			FQuat::Identity,
-			ECollisionChannel::ECC_Pawn,
+			ECollisionChannel::ECC_GameTraceChannel1,
 			FCollisionShape::MakeSphere(20.0f),
 			Params
 		);
 
 		if (bIsHit) 
 		{
-			for (FHitResult ActorHitted : Hits)
+			for (const FHitResult ActorHitted : Hits)
 			{
 				LastHit = ActorHitted;
 				if (!AlreadyHitActors.Contains(LastHit.GetActor()))
@@ -127,7 +137,7 @@ void UCollisionComponent_C_Player::CollisionTraceLeft()
 
 		if (bIsHit)
 		{
-			for (FHitResult ActorHitted : Hits)
+			for (const FHitResult ActorHitted : Hits)
 			{
 				LastHit = ActorHitted;
 				if (!AlreadyHitActors.Contains(LastHit.GetActor()))
@@ -150,6 +160,117 @@ void UCollisionComponent_C_Player::CollisionTraceLeft()
 	}
 
 
+}
+
+void UCollisionComponent_C_Player::EnableCollisionLegRight()
+{
+	ClearHitActors();
+	bCollisionEnableLegRight = true;
+
+	
+}
+
+void UCollisionComponent_C_Player::EnableCollisionLegLeft()
+{
+	ClearHitActors();
+	bCollisionEnableLegLeft = true;
+
+	
+}
+
+
+void UCollisionComponent_C_Player::DisableCollisionLegRight()
+{
+	bCollisionEnableLegRight = false;
+}
+
+void UCollisionComponent_C_Player::DisableCollisionLegLeft()
+{
+	bCollisionEnableLegLeft = false;
+}
+
+void UCollisionComponent_C_Player::CollisionTraceLegRight()
+{
+	if (GetWorld())
+	{
+
+		bool bIsHit = GetWorld()->SweepMultiByChannel
+		(
+			Hits,
+			CollisionMeshComponent->GetSocketLocation(StartSocketLegRight),
+			CollisionMeshComponent->GetSocketLocation(EndSocketLegRight),
+			FQuat::Identity,
+			ECollisionChannel::ECC_GameTraceChannel1,
+			FCollisionShape::MakeSphere(20.0f),
+			Params
+		);
+
+		if (bIsHit)
+		{
+			for (const FHitResult ActorHitted : Hits)
+			{
+				LastHit = ActorHitted;
+				if (!AlreadyHitActors.Contains(LastHit.GetActor()))
+				{
+					AActor* HitActor = LastHit.GetActor();
+					AlreadyHitActors.Add(HitActor);
+					OnEventDispatcher(LastHit);
+
+
+					if (GEngine)
+					{
+						FString N = FString::Printf(TEXT("RESULT %s"), *ActorHitted.GetActor()->GetName());
+						GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, N);
+					}
+
+				}
+
+			}
+
+		}
+	}
+}
+
+void UCollisionComponent_C_Player::CollisionTraceLegLeft()
+{
+	if (GetWorld())
+	{
+
+		bool bIsHit = GetWorld()->SweepMultiByChannel
+		(
+			Hits,
+			CollisionMeshComponent->GetSocketLocation(StartSocketLegLeft),
+			CollisionMeshComponent->GetSocketLocation(EndSocketLegLeft),
+			FQuat::Identity,
+			ECollisionChannel::ECC_GameTraceChannel1,
+			FCollisionShape::MakeSphere(20.0f),
+			Params
+		);
+
+		if (bIsHit)
+		{
+			for (const FHitResult ActorHitted : Hits)
+			{
+				LastHit = ActorHitted;
+				if (!AlreadyHitActors.Contains(LastHit.GetActor()))
+				{
+					AActor* HitActor = LastHit.GetActor();
+					AlreadyHitActors.Add(HitActor);
+					OnEventDispatcher(LastHit);
+
+
+					if (GEngine)
+					{
+						FString N = FString::Printf(TEXT("RESULT %s"), *ActorHitted.GetActor()->GetName());
+						GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Cyan, N);
+					}
+
+				}
+
+			}
+
+		}
+	}
 }
 
 void UCollisionComponent_C_Player::ClearHitActors()
@@ -176,6 +297,16 @@ bool UCollisionComponent_C_Player::IsCollisionEnableRight()
 bool UCollisionComponent_C_Player::IsCollisionEnableLeft()
 {
 	return bCollisionEnabledLeft;
+}
+
+bool UCollisionComponent_C_Player::IsCollisionEnableLegRight()
+{
+	return bCollisionEnableLegRight;
+}
+
+bool UCollisionComponent_C_Player::IsCollisionEnableLegLeft()
+{
+	return bCollisionEnableLegLeft;
 }
 
 FHitResult UCollisionComponent_C_Player::GetLastHit()

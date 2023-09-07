@@ -159,6 +159,85 @@ void ACharacterBase::HeavyAttack()
 	}
 }
 
+void ACharacterBase::TrackChargedKickAttack(FKey Key2)
+{
+	HoldKey2 = Key2;
+	GetWorld()->GetTimerManager().SetTimer(TimerPress3, this, &ACharacterBase::ChargedKickAttackTimerEvent, 0.016, true);
+	UE_LOG(LogTemp, Warning, TEXT("Track charged Kick Attack"));
+}
+
+void ACharacterBase::ChargedKickAttackTimerEvent()
+{
+	AttackHoldTime = UGameplayStatics::GetPlayerController(GetWorld(), 0)->GetInputKeyTimeDown(HoldKey2);
+	bAttackCharged = AttackHoldTime >= 0.18f;
+	if (bAttackCharged)
+	{
+		GetWorld()->GetTimerManager().SetTimer(TimerPress4, FTimerDelegate::CreateLambda([=]()
+			{
+				GetWorld()->GetTimerManager().ClearTimer(TimerPress3);
+			}
+		), 0.016, false);
+		UE_LOG(LogTemp, Warning, TEXT("Clear Charged Kick Attack"));
+
+		ChargedKickAttackEvent();
+	}
+}
+
+void ACharacterBase::ChargedKickAttackEvent()
+{
+	if (CanPerformAttack()) 
+	{
+		PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_CHARGEDKICK);
+	}
+}
+
+bool ACharacterBase::ResetChargedKickAttack()
+{
+	GetWorld()->GetTimerManager().SetTimer(TimerPress4, FTimerDelegate::CreateLambda([=]()
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerPress3);
+		}
+	), 0.016, false);
+	UE_LOG(LogTemp, Warning, TEXT("Clear Charged Kick Attack"));
+	AttackHoldTime = 0;
+	if (bAttackCharged)
+	{
+		bAttackCharged = false;
+		bReturnAttackCharged = false;
+	}
+	else
+	{
+		bReturnAttackCharged = true;
+	}
+	return bReturnAttackCharged;
+}
+
+void ACharacterBase::HeavyKickAttack()
+{
+	TrackChargedKickAttack(HoldKey2);
+}
+
+void ACharacterBase::HeavyKickAttackReleased()
+{
+	if (ResetChargedKickAttack()) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HEAVY KICK1"));
+
+		if (StateManagerComponent->GetCurrentState() != ECharacterState::CS_ATTACKING)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("HEAVY KICK2"));
+
+			if (CanPerformAttack())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("HEAVY KICK3"));
+				PerformAttack(CombatComponent->AttackCount, ECharacterAction::CA_HEAVYKICK);
+			}
+		}
+
+	}
+
+}
+
 void ACharacterBase::TrackChargedAttack(FKey Key)
 {
 	HoldKey1 = Key;
@@ -251,6 +330,10 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyAttack);
 	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttack);
 
+	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyKickAttack);
+	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Released, this, &ACharacterBase::HeavyKickAttackReleased);
+
+
 
 	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
 
@@ -271,6 +354,7 @@ void ACharacterBase::HIT(FHitResult HitResult)
 		DamageT
 	);
 
+
 	UGameplayStatics::SpawnEmitterAtLocation(this, ParticleHit, HitResult.ImpactPoint);
 }
 
@@ -289,7 +373,16 @@ void ACharacterBase::ApplyHitReaction(AActor* Causer, ECharacterAction AttackTyp
 	case ECharacterAction::CA_CHARGED:
 		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Causer->GetActorLocation()));
 		PlayAnimMontage(PerformKnockdownAnim);
-		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 10000.0f, true);
+		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 1500.0f, true);
+		GetMesh()->GetAnimInstance()->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
+		break;
+	case ECharacterAction::CA_HEAVYKICK:
+		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 1000.0f, true);
+		break;
+	case ECharacterAction::CA_CHARGEDKICK:
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Causer->GetActorLocation()));
+		PlayAnimMontage(PerformKnockdownAnim);
+		GetCharacterMovement()->AddImpulse(Causer->GetActorForwardVector() * 2000.0f, true);
 		GetMesh()->GetAnimInstance()->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
 		break;
 	default:
@@ -332,6 +425,15 @@ float ACharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		L_Action = ECharacterAction::CA_CHARGED;
 		break;
 
+	case ECharacterAction::CA_HEAVYKICK:
+		UE_LOG(LogTemp, Warning, TEXT("HeavyKickAttack"));
+		L_Action = ECharacterAction::CA_HEAVYKICK;
+		break;
+
+	case ECharacterAction::CA_CHARGEDKICK:
+		UE_LOG(LogTemp, Warning, TEXT("ChargedKickAttack"));
+		L_Action = ECharacterAction::CA_CHARGEDKICK;
+		break;
 	default:
 		break;
 	}
@@ -424,6 +526,17 @@ void ACharacterBase::ResetCombat_Implementation()
 	StateManagerComponent->ResetState();
 	StateManagerComponent->SetCurrentAction(ECharacterAction::CA_NONE);
 	//bIsDodging = false;
+}
+
+void ACharacterBase::DisableCollision_Implementation()
+{
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Ignore);
+}
+
+void ACharacterBase::EnableCollision_Implementation()
+{
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1, ECollisionResponse::ECR_Block);
+
 }
 
 bool ACharacterBase::CanPerformAttack()

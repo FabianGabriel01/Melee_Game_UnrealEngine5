@@ -101,8 +101,13 @@ public:
 	UPROPERTY(EditAnywhere)
 		FKey HoldKey1;
 
+	UPROPERTY(EditAnywhere)
+		FKey HoldKey2;
+
 	FTimerHandle TimerPress1;
 	FTimerHandle TimerPress2;
+	FTimerHandle TimerPress3;
+	FTimerHandle TimerPress4;
 
 
 	TArray<ECharacterState> StatesToCheckInCanAttack;
@@ -136,6 +141,10 @@ public:
 
 	void ResetCombat_Implementation() override;
 
+	void DisableCollision_Implementation() override;
+
+	void EnableCollision_Implementation() override;
+
 	//FUNCS
 	bool CanPerformAttack();
 
@@ -164,6 +173,18 @@ private:
 	void LightAttackReleased();
 
 	void HeavyAttack();
+
+	void TrackChargedKickAttack(FKey Key2);
+
+	void ChargedKickAttackTimerEvent();
+
+	void ChargedKickAttackEvent();
+
+	bool ResetChargedKickAttack();
+
+	void HeavyKickAttack();
+
+	void HeavyKickAttackReleased();
 
 	void TrackChargedAttack(FKey Key);
 

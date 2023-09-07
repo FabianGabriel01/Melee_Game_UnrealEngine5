@@ -51,6 +51,12 @@ public:
 	UPROPERTY()
 		TArray<UAnimMontage*> ReturnActionsMontages;
 
+	UPROPERTY(EditAnywhere)
+		TArray<UAnimMontage*> HeavyKickAttackMontages;
+
+	UPROPERTY(EditAnywhere)
+		TArray<UAnimMontage*> ChargedKickMontages;
+
 	UFUNCTION()
 	void ResetAttack();
 

@@ -13,6 +13,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "Components/InputComponent.h"
 ////////////Online Subsystem
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
@@ -28,7 +31,7 @@ ACharacterBase::ACharacterBase()
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->SetWorldLocation(FVector(0.f, 15.f, 60.f));
 	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->TargetArmLength = 200.f;
+	CameraBoom->TargetArmLength = 100.f;
 	CameraBoom->bUsePawnControlRotation = true;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -98,7 +101,99 @@ ACharacterBase::ACharacterBase()
 }
 
 
+// Called when the game starts or when spawned
+void ACharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
 
+	CollisionComponent->SetCollisionMeshComponentRight(GetMesh());
+	CollisionComponent->SetCollisionMeshComponentLeft(GetMesh());
+	CollisionComponent->AddActorToIgnore(GetOwner());
+	CollisionComponent->OnHitDispatcher.AddDynamic(this, &ACharacterBase::HIT);
+
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(InputContextPlayer, 0);
+		}
+	}
+	
+}
+
+
+// Called every frame
+void ACharacterBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+
+
+
+// Called to bind functionality to input
+void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	//PlayerInputComponent->BindAxis("Move Forward / Backward", this, &ACharacterBase::MoveForward);
+	//PlayerInputComponent->BindAxis("Move Right / Left", this, &ACharacterBase::MoveRight);
+	//PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
+	//PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
+
+
+	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
+
+	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::LightAttack);
+	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttackReleased);
+
+	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyAttack);
+	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttack);
+
+	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyKickAttack);
+	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Released, this, &ACharacterBase::HeavyKickAttackReleased);
+
+
+
+
+	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
+	//PlayerInputComponent->BindAction("TestingP", EInputEvent::IE_Pressed, this, &ACharacterBase::EnableRagdoll);
+
+	/////////////USING ENHANCED INPUT SYSTEM
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MovementInput, ETriggerEvent::Triggered, this, &ACharacterBase::MovementPlayer);
+		EnhancedInputComponent->BindAction(LookingInput, ETriggerEvent::Triggered, this, &ACharacterBase::LookAround);
+	}
+
+
+
+
+}
+
+void ACharacterBase::MovementPlayer(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	AddMovementInput(RightDirection, MovementVector.X);
+	
+}
+
+void ACharacterBase::LookAround(const FInputActionValue& Value)
+{
+	FVector2D Look = Value.Get<FVector2D>();
+	if (GetController()) 
+	{
+		AddControllerYawInput(Look.X);
+		AddControllerPitchInput(Look.Y);
+	}
+
+}
 
 void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
 {
@@ -318,56 +413,6 @@ bool ACharacterBase::ResetChargedAttack()
 	return bReturnAttackCharged;
 }
 
-
-
-// Called when the game starts or when spawned
-void ACharacterBase::BeginPlay()
-{
-	Super::BeginPlay();
-
-	CollisionComponent->SetCollisionMeshComponentRight(GetMesh());
-	CollisionComponent->SetCollisionMeshComponentLeft(GetMesh());
-	CollisionComponent->AddActorToIgnore(GetOwner());
-	CollisionComponent->OnHitDispatcher.AddDynamic(this, &ACharacterBase::HIT);
-	
-}
-
-// Called every frame
-void ACharacterBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
-// Called to bind functionality to input
-void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &ACharacterBase::MoveForward);
-	PlayerInputComponent->BindAxis("Move Right / Left", this, &ACharacterBase::MoveRight);
-
-	PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
-
-	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
-
-	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::LightAttack);
-	PlayerInputComponent->BindAction("LightAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttackReleased);
-
-	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyAttack);
-	PlayerInputComponent->BindAction("HeavyAttack", EInputEvent::IE_Released, this, &ACharacterBase::LightAttack);
-
-	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Pressed, this, &ACharacterBase::HeavyKickAttack);
-	PlayerInputComponent->BindAction("LightAttackKick", EInputEvent::IE_Released, this, &ACharacterBase::HeavyKickAttackReleased);
-
-
-
-	PlayerInputComponent->BindAction("Dodge", EInputEvent::IE_Pressed, this, &ACharacterBase::Dodge);
-
-	//PlayerInputComponent->BindAction("TestingP", EInputEvent::IE_Pressed, this, &ACharacterBase::EnableRagdoll);
-
-}
-
 void ACharacterBase::HIT(FHitResult HitResult)
 {
 	UGameplayStatics::ApplyPointDamage
@@ -582,6 +627,8 @@ bool ACharacterBase::CanPerformDodge()
 	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanDodge) && !GetCharacterMovement()->IsFalling();
 }
 
+
+////////////// ONLINE SUBSYSTEM
 void ACharacterBase::OpenLobby()
 {
 	GetWorld()->ServerTravel("/Game/CombatSystem/Maps/Lobby?listen");

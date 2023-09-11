@@ -9,11 +9,15 @@
 #include "Engine/EngineTypes.h"
 #include "CharacterState.h"
 #include "StateManagerComponent_Player.h"
+#include "InputActionValue.h"
 #include "CharacterBase.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 class UCombatComponentPlayer;
+class UAnimMontage;
+class UInputMappingContext;
+class UInputAction;
 
 UCLASS()
 class MELEE_GAME_API ACharacterBase : public ACharacter, public ICombat_CI
@@ -50,6 +54,18 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ParticleHit;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
+	UInputMappingContext* InputContextPlayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
+	UInputAction* MovementInput;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
+	UInputAction* LookingInput;
+
+	void MovementPlayer(const FInputActionValue& Value);
+	void LookAround(const FInputActionValue& Value);
 
 public:	
 	// Called every frame

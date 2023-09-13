@@ -22,7 +22,6 @@ ACharacterClimbSystem::ACharacterClimbSystem(const FObjectInitializer& ObjectIni
 	GetCapsuleComponent()->InitCapsuleSize(34.0f, 88.0f);
 
 	CustomMovementComponent = Cast<UCustomMovementComponent>(GetCharacterMovement());
-	if (CustomMovementComponent) DEBUG::Print(TEXT("CASTED SUCCESS"));
 
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>("CameraBoom");
@@ -63,7 +62,6 @@ void ACharacterClimbSystem::BeginPlay()
 			Subsystem->AddMappingContext(InputContextPlayer, 0);
 		}
 	}
-	DEBUG::Print(TEXT("DEBUG WORKING"));
 	
 }
 
@@ -91,6 +89,23 @@ void ACharacterClimbSystem::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 void ACharacterClimbSystem::MovementPlayer(const FInputActionValue& Value)
 {
+	if (!CustomMovementComponent) return;
+
+	if (CustomMovementComponent->IsClimbing()) 
+	{
+		HandleClimbMovementInput(Value);
+	}
+	else 
+	{
+		HandleGroundMovementInput(Value);
+	}
+
+
+	
+}
+
+void ACharacterClimbSystem::HandleGroundMovementInput(const FInputActionValue& Value)
+{
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
@@ -98,6 +113,28 @@ void ACharacterClimbSystem::MovementPlayer(const FInputActionValue& Value)
 	AddMovementInput(ForwardDirection, MovementVector.Y);
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 	AddMovementInput(RightDirection, MovementVector.X);
+}
+
+void ACharacterClimbSystem::HandleClimbMovementInput(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector ForwardDirection = FVector::CrossProduct
+	(
+		-CustomMovementComponent->GetClimbableSurfacenormal(),
+		GetActorRightVector()
+		
+	);
+
+	const FVector RightDirection = FVector::CrossProduct
+	(
+		-CustomMovementComponent->GetClimbableSurfacenormal(),
+		-GetActorUpVector()
+	);
+
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	AddMovementInput(RightDirection, MovementVector.X);
+
+
 }
 
 void ACharacterClimbSystem::LookAround(const FInputActionValue& Value)
@@ -112,13 +149,12 @@ void ACharacterClimbSystem::LookAround(const FInputActionValue& Value)
 
 void ACharacterClimbSystem::OnClimbInputStarted(const FInputActionValue& Value)
 {
-	DEBUG::Print(TEXT("Climb INPUT"));
+	if (!CustomMovementComponent)
+	{
+		DEBUG::Print(TEXT("NOT VALID COMPONENT MOVEMENT"));
+		return;
+	}
 
-	if (CustomMovementComponent) DEBUG::Print(TEXT("IS VALID"));
-	else DEBUG::Print(TEXT("IS NO VALID"));
-
-	if (!CustomMovementComponent) return;
-	DEBUG::Print(TEXT("NO VALID"));
 
 	if (!CustomMovementComponent->IsClimbing()) 
 	{

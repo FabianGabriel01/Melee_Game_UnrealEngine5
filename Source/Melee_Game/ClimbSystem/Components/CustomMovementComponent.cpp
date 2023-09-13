@@ -6,6 +6,7 @@
 #include "Melee_Game/ClimbSystem/CharacterClimbSystem.h"
 #include "Melee_Game/ClimbSystem/DebugHelpers.h"
 #include "Components/CapsuleComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -15,6 +16,17 @@ void UCustomMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 }
 
 #pragma region ClimbTrace
+void UCustomMovementComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    OwningPlayerInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+
+    if (OwningPlayerInstance)
+    {
+        OwningPlayerInstance->OnMontageEnded.AddDynamic(this, &UCustomMovementComponent::onClimbMontageEnded);
+        OwningPlayerInstance->OnMontageBlendingOut.AddDynamic(this, &UCustomMovementComponent::onClimbMontageEnded);
+    }
+}
 void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
 {
     if (IsClimbing()) 
@@ -27,6 +39,11 @@ void UCustomMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovem
     {
         bOrientRotationToMovement = true;
         CharacterOwner->GetCapsuleComponent()->SetCapsuleHalfHeight(88.0f);
+
+        const FRotator DirtyRotation = UpdatedComponent->GetComponentRotation();
+        const FRotator CleanStandRotation = FRotator(0.f, DirtyRotation.Yaw, 0.f);
+        UpdatedComponent->SetRelativeRotation(CleanStandRotation);
+
         StopMovementImmediately();
 
     }
@@ -142,14 +159,13 @@ void UCustomMovementComponent::ToggleClimbing(bool bEnableClimb)
         if (CanStartClimbing()) 
         {
             ///Climb State
-            DEBUG::Print(TEXT("Can Start Climb"));
-            StartClimbing();
+            //StartClimbing();
+            PlayClimbMontage(IdleToClimbMontage);
 
         }
         else 
         {
             //EmptyState
-            DEBUG::Print(TEXT("Can NOT Start Climb"));
 
         }
     }
@@ -164,6 +180,7 @@ bool UCustomMovementComponent::IsClimbing() const
 {
     return MovementMode == MOVE_Custom && CustomMovementMode == ECustomMovementMode::MOVE_Climb;
 }
+
 
 
 bool UCustomMovementComponent::CanStartClimbing()
@@ -202,6 +219,10 @@ void UCustomMovementComponent::PhysicsClimb(float deltaTime, int32 Iterations)
     ProcessClimbableSurfaceInfo();
 
     /*Check if we shodl stop climbing*/
+    if (CheckShouldStopClimging()) 
+    {
+        StopClimbing();
+    }
 
     RestorePreAdditiveRootMotionVelocity();
 
@@ -253,6 +274,17 @@ void UCustomMovementComponent::ProcessClimbableSurfaceInfo()
     CurrentClimbableSurfaceNormal = CurrentClimbableSurfaceNormal.GetSafeNormal();
 }
 
+bool UCustomMovementComponent::CheckShouldStopClimging()
+{
+    if (ClimbableSurfacesTraceResults.IsEmpty()) return true;
+
+    const float DotResult = FVector::DotProduct(CurrentClimbableSurfaceNormal, FVector::UpVector);
+    const float DegreeDiff = FMath::RadiansToDegrees(FMath::Acos(DotResult));
+
+    if (DegreeDiff <= 60.f) return true;
+    return false;
+}
+
 FQuat UCustomMovementComponent::GetClimbRotation(float DeltaTime)
 {
     const FQuat CurrentQuat = UpdatedComponent->GetComponentQuat();
@@ -280,7 +312,6 @@ void UCustomMovementComponent::SnapMovementToClimbableSurfaces(float DeltaTime)
 }
 
 
-
 /// <summary>
 /// //TRACE FOR CLIMBABLE SURFACE RETURN TRUE If there are indeed valid surfaces, false otherwise
 /// </summary>
@@ -304,6 +335,33 @@ FHitResult UCustomMovementComponent::TraceFromEyeHeight(float TraceDistance, flo
 
    return DoLineTraceSingleByObject(Start, End);
 }
+
+
+void UCustomMovementComponent::PlayClimbMontage(UAnimMontage* MontageToPlay)
+{
+    if (!MontageToPlay) return;
+    if (!OwningPlayerInstance) return;
+    if (OwningPlayerInstance->IsAnyMontagePlaying()) return;
+
+    OwningPlayerInstance->Montage_Play(MontageToPlay);
+}
+
+void UCustomMovementComponent::onClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    DEBUG::Print(TEXT("CLIMB MONTAGES ENDED"));
+    if (Montage == IdleToClimbMontage) 
+    {
+        StartClimbing();
+    }
+}
+
+
+FVector UCustomMovementComponent::GetUnrotatedClimbVelocity() const
+{
+    return UKismetMathLibrary::Quat_UnrotateVector(UpdatedComponent->GetComponentQuat(), Velocity);
+}
+
+
 
 #pragma endregion
 

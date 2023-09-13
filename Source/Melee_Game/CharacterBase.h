@@ -18,6 +18,7 @@ class UCombatComponentPlayer;
 class UAnimMontage;
 class UInputMappingContext;
 class UInputAction;
+class UCustomMovementComponent;
 
 UCLASS()
 class MELEE_GAME_API ACharacterBase : public ACharacter, public ICombat_CI
@@ -26,7 +27,7 @@ class MELEE_GAME_API ACharacterBase : public ACharacter, public ICombat_CI
 
 public:
 	// Sets default values for this character's properties
-	ACharacterBase();
+	ACharacterBase(const FObjectInitializer& ObjectInitializer);
 
 
 protected:
@@ -49,6 +50,10 @@ protected:
 	UStateManagerComponent_Player* StateManagerComponent;
 
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	UCustomMovementComponent* CustomMovementComponent;
+
+
 	UPROPERTY(EditAnywhere)
 	USoundBase* HitSound;
 
@@ -66,6 +71,17 @@ protected:
 
 	void MovementPlayer(const FInputActionValue& Value);
 	void LookAround(const FInputActionValue& Value);
+
+	void HandleGroundMovementInput(const FInputActionValue& Value);
+
+	void HandleClimbMovementInput(const FInputActionValue& Value);
+
+	void OnClimbInputStarted(const FInputActionValue& Value);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
+		UInputAction* ClimbInput;
+
+	FORCEINLINE class UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 
 public:	
 	// Called every frame

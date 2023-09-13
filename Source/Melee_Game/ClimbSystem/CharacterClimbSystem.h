@@ -49,6 +49,13 @@ protected:
 		UInputAction* LookingInput;
 
 	void MovementPlayer(const FInputActionValue& Value);
+
+	void HandleGroundMovementInput(const FInputActionValue& Value);
+
+	void HandleClimbMovementInput(const FInputActionValue& Value);
+
+
+
 	void LookAround(const FInputActionValue& Value);
 	void OnClimbInputStarted(const FInputActionValue& Value);
 
@@ -67,6 +74,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float BaseLookUpRate;
+
+	
 
 
 

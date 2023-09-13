@@ -4,7 +4,8 @@
 #include "CharacterBase.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+//#include "GameFramework/CharacterMovementComponent.h"
+#include "Melee_Game/ClimbSystem/Components/CustomMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Animation/AnimMontage.h"
 #include "Melee_Game/CombatComponentPlayer.h"
@@ -16,16 +17,20 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Components/InputComponent.h"
+#include "Melee_Game/ClimbSystem/DebugHelpers.h"
 ////////////Online Subsystem
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
 
 // Sets default values
-ACharacterBase::ACharacterBase()
+ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCustomMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	CustomMovementComponent = Cast<UCustomMovementComponent>(GetCharacterMovement());
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>("CameraBoom");
 	CameraBoom->SetupAttachment(GetRootComponent());
@@ -43,6 +48,7 @@ ACharacterBase::ACharacterBase()
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = 250.f;
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.4f;
@@ -165,6 +171,8 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInputComponent->BindAction(MovementInput, ETriggerEvent::Triggered, this, &ACharacterBase::MovementPlayer);
 		EnhancedInputComponent->BindAction(LookingInput, ETriggerEvent::Triggered, this, &ACharacterBase::LookAround);
+		EnhancedInputComponent->BindAction(ClimbInput, ETriggerEvent::Started, this, &ACharacterBase::OnClimbInputStarted);
+
 	}
 
 
@@ -174,13 +182,18 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ACharacterBase::MovementPlayer(const FInputActionValue& Value)
 {
-	const FVector2D MovementVector = Value.Get<FVector2D>();
-	const FRotator Rotation = Controller->GetControlRotation();
-	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	AddMovementInput(ForwardDirection, MovementVector.Y);
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	AddMovementInput(RightDirection, MovementVector.X);
+	if (!CustomMovementComponent) return;
+
+	if (CustomMovementComponent->IsClimbing())
+	{
+		HandleClimbMovementInput(Value);
+	}
+	else
+	{
+		HandleGroundMovementInput(Value);
+	}
+
+
 	
 }
 
@@ -193,6 +206,55 @@ void ACharacterBase::LookAround(const FInputActionValue& Value)
 		AddControllerPitchInput(Look.Y);
 	}
 
+}
+
+void ACharacterBase::HandleGroundMovementInput(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	AddMovementInput(RightDirection, MovementVector.X);
+
+
+
+}
+
+void ACharacterBase::HandleClimbMovementInput(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector ForwardDirection = FVector::CrossProduct
+	(
+		-CustomMovementComponent->GetClimbableSurfacenormal(),
+		GetActorRightVector()
+
+	);
+
+	const FVector RightDirection = FVector::CrossProduct
+	(
+		-CustomMovementComponent->GetClimbableSurfacenormal(),
+		-GetActorUpVector()
+	);
+
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	AddMovementInput(RightDirection, MovementVector.X);
+}
+
+void ACharacterBase::OnClimbInputStarted(const FInputActionValue& Value)
+{
+	if (!CustomMovementComponent) return;
+
+	if (!CustomMovementComponent->IsClimbing())
+	{
+		CustomMovementComponent->ToggleClimbing(true);
+	}
+	else
+	{
+		CustomMovementComponent->ToggleClimbing(false);
+
+	}
 }
 
 void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
@@ -615,7 +677,7 @@ bool ACharacterBase::CanPerformAttack()
 {
 	//return !CombatComponent->bIsAttacking;
 
-	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanAttack);
+	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanAttack) && !CustomMovementComponent->IsClimbing();
 
 	
 }
@@ -624,7 +686,7 @@ bool ACharacterBase::CanPerformDodge()
 {
 	//return !CombatComponent->bIsAttacking && !bIsDodging && !GetCharacterMovement()->IsFalling();
 
-	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanDodge) && !GetCharacterMovement()->IsFalling();
+	return !StateManagerComponent->IsCurrentStateEqualToAny(StatesToCheckInCanDodge) && !GetCharacterMovement()->IsFalling() && !CustomMovementComponent->IsClimbing();
 }
 
 

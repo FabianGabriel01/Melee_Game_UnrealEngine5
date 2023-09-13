@@ -9,6 +9,8 @@
 /**
  * 
  */
+class UAnimMontage;
+class UAnimInstance;
 
 UENUM(BlueprintType)
 namespace ECustomMovementMode
@@ -28,6 +30,8 @@ class MELEE_GAME_API UCustomMovementComponent : public UCharacterMovementCompone
 
 protected:
 #pragma region OverridenFunction
+
+	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -58,6 +62,9 @@ private:
 	FVector CurrentClimbableSurfaceLocation;
 	FVector CurrentClimbableSurfaceNormal;
 
+	UPROPERTY()
+		UAnimInstance* OwningPlayerInstance;
+
 
 
 #pragma endregion
@@ -78,9 +85,17 @@ private:
 
 	void ProcessClimbableSurfaceInfo();
 
+	bool CheckShouldStopClimging();
+
+
 	FQuat GetClimbRotation(float DeltaTime);
 
 	void SnapMovementToClimbableSurfaces(float DeltaTime);
+
+	void PlayClimbMontage(UAnimMontage* MontageToPlay);
+
+	UFUNCTION()
+		void onClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 #pragma endregion
 
@@ -104,6 +119,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterMovement : Climbing", meta = (AllowPrivateAccess = "true"))
 		float MaxClimbAcceleration = 300.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterMovement : Climbing", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* IdleToClimbMontage;
+
 #pragma endregion
 
 
@@ -111,5 +130,9 @@ public:
 	void ToggleClimbing(bool bEnableClimb);
 
 	bool IsClimbing() const;
+
+	FORCEINLINE FVector GetClimbableSurfacenormal() const { return CurrentClimbableSurfaceNormal;  }
+
+	FVector GetUnrotatedClimbVelocity() const;
 	
 };

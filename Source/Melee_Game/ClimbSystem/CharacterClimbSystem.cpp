@@ -151,7 +151,7 @@ void ACharacterClimbSystem::OnClimbInputStarted(const FInputActionValue& Value)
 {
 	if (!CustomMovementComponent)
 	{
-		DEBUG::Print(TEXT("NOT VALID COMPONENT MOVEMENT"));
+		//DEBUG::Print(TEXT("NOT VALID COMPONENT MOVEMENT"));
 		return;
 	}
 

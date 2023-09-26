@@ -16,6 +16,7 @@ class UAnimMontage;
 class UInputMappingContext;
 class UInputAction;
 class UCustomMovementComponent;
+class UMotionWarpingComponent;
 
 UCLASS()
 class MELEE_GAME_API ACharacterClimbSystem : public ACharacter
@@ -39,6 +40,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 		UCustomMovementComponent* CustomMovementComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Motion")
+		UMotionWarpingComponent* MotionWarpingComponent;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
 		UInputMappingContext* InputContextPlayer;
 
@@ -47,6 +51,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
 		UInputAction* LookingInput;
+
+	void OnPlayerEnterClimbState();
+
+	void OnPlayerExitClimbState();
 
 	void MovementPlayer(const FInputActionValue& Value);
 
@@ -81,4 +89,5 @@ public:
 
 	FORCEINLINE class UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 	
+	FORCEINLINE class UMotionWarpingComponent* GetMotionWarpingComponent() const { return MotionWarpingComponent; }
 };

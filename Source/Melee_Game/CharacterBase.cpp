@@ -36,7 +36,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 	CameraBoom->SetupAttachment(GetRootComponent());
 	CameraBoom->SetWorldLocation(FVector(0.f, 15.f, 60.f));
 	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->TargetArmLength = 100.f;
+	CameraBoom->TargetArmLength = 300.f;
 	CameraBoom->bUsePawnControlRotation = true;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -50,7 +50,7 @@ ACharacterBase::ACharacterBase(const FObjectInitializer& ObjectInitializer)
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->MaxWalkSpeed = 250.f;
-	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->JumpZVelocity = 500.f;
 	GetCharacterMovement()->AirControl = 0.4f;
 
 	BaseTurnRate = 45.f;
@@ -282,6 +282,9 @@ void ACharacterBase::PerformAttack(int AttackIndex, ECharacterAction AttackType)
 
 void ACharacterBase::PerformDodge(int MontageIndex)
 {
+	//if (!CustomMovementComponent->IsClimbing()) return;
+	//CustomMovementComponent->SetMovementMode(EMovementMode::MOVE_Falling);
+
 	if (MontageIndex > CombatComponent->DodgeMontages.Num()-1) 
 	{
 		MontageIndex = 0;
@@ -293,7 +296,6 @@ void ACharacterBase::PerformDodge(int MontageIndex)
 		{
 			//bIsDodging = true;
 			StateManagerComponent->SetState(ECharacterState::CS_DODGING);
-
 			PlayAnimMontage(L_DodgeMontage);
 
 		}

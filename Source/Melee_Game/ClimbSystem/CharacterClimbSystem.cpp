@@ -11,6 +11,7 @@
 #include "EnhancedInputComponent.h"
 #include "Components/InputComponent.h"
 #include "Melee_Game/ClimbSystem/DebugHelpers.h"
+#include "MotionWarpingComponent.h"
 
 // Sets default values
 ACharacterClimbSystem::ACharacterClimbSystem(const FObjectInitializer& ObjectInitializer)
@@ -40,10 +41,17 @@ ACharacterClimbSystem::ACharacterClimbSystem(const FObjectInitializer& ObjectIni
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.4f;
+	CustomMovementComponent->bOrientRotationToMovement = true;
+	CustomMovementComponent->MaxWalkSpeed = 500.f;
+	CustomMovementComponent->JumpZVelocity = 500.f;
+	CustomMovementComponent->AirControl = 0.4f;
+
+	MotionWarpingComponent = CreateDefaultSubobject<UMotionWarpingComponent>("MotionWarping");
+
+	//GetCharacterMovement()->bOrientRotationToMovement = true;
+	//GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	//GetCharacterMovement()->JumpZVelocity = 700.f;
+	//GetCharacterMovement()->AirControl = 0.4f;
 
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -61,6 +69,13 @@ void ACharacterClimbSystem::BeginPlay()
 		{
 			Subsystem->AddMappingContext(InputContextPlayer, 0);
 		}
+	}
+
+	if (CustomMovementComponent) 
+	{
+		CustomMovementComponent->EnterClimbState.BindUObject(this, &ACharacterClimbSystem::OnPlayerEnterClimbState);
+		CustomMovementComponent->ExitClimbState.BindUObject(this, &ACharacterClimbSystem::OnPlayerExitClimbState);
+
 	}
 	
 }
@@ -84,6 +99,17 @@ void ACharacterClimbSystem::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(LookingInput, ETriggerEvent::Triggered, this, &ACharacterClimbSystem::LookAround);
 		EnhancedInputComponent->BindAction(ClimbInput, ETriggerEvent::Started, this, &ACharacterClimbSystem::OnClimbInputStarted);
 	}
+
+}
+
+void ACharacterClimbSystem::OnPlayerEnterClimbState()
+{
+	DEBUG::Print(TEXT("ENTER CLIMB STATE"));
+}
+
+void ACharacterClimbSystem::OnPlayerExitClimbState()
+{
+	DEBUG::Print(TEXT("EXIT CLIMB STATE"));
 
 }
 

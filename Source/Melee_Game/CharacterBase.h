@@ -81,9 +81,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inputs")
 		UInputAction* ClimbInput;
 
-	FORCEINLINE class UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 
-public:	
+public:
+
+	FORCEINLINE class UCustomMovementComponent* GetCustomMovementComponent() const { return CustomMovementComponent; }
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

@@ -6,11 +6,16 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CustomMovementComponent.generated.h"
 
+DECLARE_DELEGATE(FOnEnterClimbState)
+DECLARE_DELEGATE(FOnExitClimbState)
+
+
 /**
  * 
  */
 class UAnimMontage;
 class UAnimInstance;
+class ACharacterClimbSystem;
 
 UENUM(BlueprintType)
 namespace ECustomMovementMode
@@ -27,6 +32,10 @@ UCLASS()
 class MELEE_GAME_API UCustomMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
+
+public:
+	FOnEnterClimbState EnterClimbState;
+	FOnExitClimbState ExitClimbState;
 
 protected:
 #pragma region OverridenFunction
@@ -67,6 +76,9 @@ private:
 	UPROPERTY()
 		UAnimInstance* OwningPlayerInstance;
 
+	UPROPERTY()
+		ACharacterClimbSystem* OwningPlayerCharacter;
+
 
 
 #pragma endregion
@@ -95,6 +107,10 @@ private:
 
 	bool CheckHasReachedLedge();
 
+	void TryStartVaulting();
+
+	bool CanStartVaulting(FVector& OutVaultStartPosition, FVector& OutVaultLandPosition);
+
 	FQuat GetClimbRotation(float DeltaTime);
 
 	void SnapMovementToClimbableSurfaces(float DeltaTime);
@@ -103,6 +119,9 @@ private:
 
 	UFUNCTION()
 		void onClimbMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void SetMotionWarpingTarget(const FName& InWarpTargetName, const FVector& InTargetPosition);
+
 
 #pragma endregion
 
@@ -143,6 +162,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterMovement : Climbing", meta = (AllowPrivateAccess = "true"))
 		UAnimMontage* ClimbDownMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterMovement : Climbing", meta = (AllowPrivateAccess = "true"))
+		UAnimMontage* VaultMontage;
 
 #pragma endregion
 

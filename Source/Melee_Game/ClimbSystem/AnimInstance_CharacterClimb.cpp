@@ -4,7 +4,7 @@
 #include "Melee_Game/ClimbSystem/AnimInstance_CharacterClimb.h"
 #include "Melee_Game/ClimbSystem/CharacterClimbSystem.h"
 #include "Melee_Game/ClimbSystem/Components/CustomMovementComponent.h"
-
+#include "Melee_Game/CharacterBase.h"
 #include "Kismet/KismetMathLibrary.h"
 
 
